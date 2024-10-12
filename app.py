@@ -1,23 +1,29 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import numpy as np
 from keras.preprocessing import image
 from keras.models import load_model
 import os
 from io import BytesIO
 from PIL import Image
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+import torch
+
 
 app = Flask(__name__)
 
 # Ruta del modelo
-#model_sentiment_path = 'models/sentiment_analysis_model.pkl'  
-model_cnn_path = 'models/cellphone_screen.keras'  
+model_sentiment_path = 'models/'  
+model_cnn_path = 'models/cellphone_screen.keras' 
 
-# Verificar si el archivo existe PRUEBA
-#if os.path.exists(model_sentiment_path):
-#    sentiment_model = load_model(model_sentiment_path)
-#    print("Modelo sentiment_analysis_model cargado exitosamente.")
-#else:
-#    print("El modelo sentiment_model no se encuentra en la ruta especificada.")
+#Cargar el tokenizer
+tokenizer = DistilBertTokenizer.from_pretrained('models/')
+
+# Verificar si el archivo existe
+if os.path.exists(model_sentiment_path):
+    sentiment_model = DistilBertForSequenceClassification.from_pretrained(model_sentiment_path)
+    print("Modelo sentiment_analysis_model cargado exitosamente.")
+else:
+    print("El modelo sentiment_model no se encuentra en la ruta especificada.")
 
 if os.path.exists(model_cnn_path):
     cnn_model = load_model(model_cnn_path)
@@ -28,22 +34,30 @@ else:
 #Ruta principal HOME, cuando se ingresa a la aplicación
 @app.route('/')
 def home():
-    return "API de análisis de sentimiento y clasificación de imágenes. Usa /analyze_sentiment y /classify_image."
+    return render_template("index.html")
 
 # Rutas de la API
 #Ruta para el análisis de sentimientos 
 #Revisar los metodos http que van a recibir
-#@app.route('/analyze_sentiment', methods=['POST'])
-#def analyze_sentiment():
-#    data = request.json['review']
-    # Simular preprocesamiento y predicción
-    # Revisar la lógica según lo que necesitemos
-#    if "good" in data.lower():
-#        prediction = np.array([[0.9]])  # Simular predicción positiva
-#    else:
-#        prediction = np.array([[0.1]])  # Simular predicción negativa
+@app.route('/analyze_sentiment', methods=['POST'])
+def analyze_sentiment():
+    try:
+        data = request.json.get('review')
+        if data is None:
+            return jsonify({'error': 'No review provided'}), 400
+        
+        # Tokenización y preparación del input
+        inputs = tokenizer(data, return_tensors="pt", truncation=True, padding=True, max_length=512)
 
-#    return jsonify({'sentiment': 'positive' if prediction > 0.5 else 'negative'}) #convertir un diccionario de Python en una respuesta en formato JSON
+        # Realiza la predicción
+        with torch.no_grad():
+            outputs = sentiment_model(**inputs)
+            logits = outputs.logits
+            prediction = torch.argmax(logits, dim=-1).item()  # Obtener la clase con la puntuación más alta
+
+        return jsonify({'sentiment': 'positive' if prediction == 1 else 'negative'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 #Ruta para la clasificación de imagenes
 #Al igual que el anterior, revisar los metoos http que va a recibir
@@ -71,7 +85,7 @@ def classify_image():
         prediction = cnn_model.predict(img_array)
 
         # Devuelve la predicción
-        result = 'broken' if prediction[0] > 0.5 else 'not broken'
+        result = 'not broken' if prediction[0] > 0.5 else 'broken'
 
         return jsonify({'screen_status': result})
 

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicación de Análisis y Clasificación</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>API de Análisis de Sentimiento y Clasificación de Imágenes</h1>
+
+    <!-- Sección para ingresar texto -->
+    <section>
+        <h2>Análisis de Sentimiento</h2>
+        <form id="sentimentForm">
+            <textarea id="review" name="review" rows="4" placeholder="Escribe tu reseña aquí..."></textarea><br>
+            <button type="button" onclick="analyzeSentiment()">Enviar Reseña</button>
+        </form>
+        <p id="sentimentResult"></p>
+    </section>
+
+    <!-- Sección para cargar imagen -->
+    <section>
+        <h2>Clasificación de Imagen</h2>
+        <form id="imageForm" enctype="multipart/form-data">
+            <input type="file" id="imageInput" name="image" accept="image/*"><br>
+            <button type="button" onclick="classifyImage()">Subir Imagen</button>
+        </form>
+        <p id="imageResult"></p>
+    </section>
+
+    <script>
+        function analyzeSentiment() {
+            const review = document.getElementById('review').value;
+            fetch('/analyze_sentiment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ review })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('sentimentResult').innerText = `Resultado: ${data.sentiment}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('sentimentResult').innerText = 'Hubo un error al procesar la reseña.';
+            });
+        }
+
+        function classifyImage() {
+            const form = document.getElementById('imageForm');
+            const formData = new FormData(form);
+
+            fetch('/classify_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('imageResult').innerText = `Estado de la pantalla: ${data.screen_status}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('imageResult').innerText = 'Hubo un error al procesar la imagen.';
+            });
+        }
+    </script>
+</body>
+</html>
