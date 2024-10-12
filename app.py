@@ -11,21 +11,9 @@ import torch
 
 app = Flask(__name__)
 
-# URL del modelo a descargar
-url = 'https://drive.google.com/drive/folders/1iwNmwItnO1HZttp2cAJL1P7UMCbMyABV'
-# Ruta del modelo descargado
-model_sentiment_path = 'models/sentiment_model.safetensors' 
-
-# Descargamos el modelo si no existe
-if not os.path.exists(model_sentiment_path):
-    print("Descargando el archivo del modelo...")
-    r = requests.get(url)
-    with open(model_sentiment_path, 'wb') as f:
-        f.write(r.content)
-    print("Archivo descargado exitosamente.")
-
-# Ruta del modelo de clasificación de imágenes
-model_cnn_path = 'models/cellphone_screen.keras'
+# Ruta del modelo
+model_sentiment_path = 'models/'  
+model_cnn_path = 'models/cellphone_screen.keras' 
 
 #Cargar el tokenizer
 tokenizer = DistilBertTokenizer.from_pretrained('models/')
