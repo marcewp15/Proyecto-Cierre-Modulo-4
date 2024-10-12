@@ -13,6 +13,7 @@ COPY . .
 
 # Exponer el puerto que usará la aplicación (Heroku usa el puerto 5000 por defecto)
 EXPOSE 5000
+ENV FLASK_APP=app.py
 
-# Comando para iniciar la aplicación Flask usando Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+# Comando para correr la aplicación en Heroku
+CMD ["flask", "run", "--host=0.0.0.0", "--port=$PORT"]
